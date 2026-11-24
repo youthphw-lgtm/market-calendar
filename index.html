@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>미국 시장 캘린더</title>
+<meta name="description" content="FOMC·CPI·PPI 등 미국 주요 지표 일정과 최근 수치">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#F2F4F3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111715" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>html { -webkit-text-size-adjust: 100%; } body { margin: 0; }</style>
+</head>
+<body>
+<title>미국 시장 캘린더</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* 레이아웃: 한 열 420~720px. 위에서부터 다음 일정(D-일수) → 현재 지표 표 → 필터 → 월별 날짜순 목록 → 출처. */
+:root {
+  --bg: #F2F4F3; --surface: #FFFFFF; --sunken: #E8ECEA; --line: #D5DBD8;
+  --ink: #17211E; --muted: #5A6A64; --accent: #1C6B57; --accent-ink: #FFFFFF; --accent-soft: #DCEBE5;
+  --c-fomc: #1C6B57; --c-price: #B0600A; --c-jobs: #2A5DA6; --c-growth: #6C4BA3; --c-survey: #0B7785; --c-fedetc: #6B7570;
+  --warn: #8A5A00; --warn-bg: #F6EAD0; --up: #C4202B; --down: #1B56C0;
+  --font: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111715; --surface: #1A2320; --sunken: #232E2A; --line: #32403B;
+  --ink: #E8EEEB; --muted: #9BABA5; --accent: #5FC2A6; --accent-ink: #0C1512; --accent-soft: #1F3A32;
+  --c-fomc: #5FC2A6; --c-price: #E7A04A; --c-jobs: #7FAAEA; --c-growth: #B79BE6; --c-survey: #5CC3D0; --c-fedetc: #9BABA5;
+  --warn: #E9C375; --warn-bg: #3A3018; --up: #FF8078; --down: #7FAEFF; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #111715; --surface: #1A2320; --sunken: #232E2A; --line: #32403B;
+  --ink: #E8EEEB; --muted: #9BABA5; --accent: #5FC2A6; --accent-ink: #0C1512; --accent-soft: #1F3A32;
+  --c-fomc: #5FC2A6; --c-price: #E7A04A; --c-jobs: #7FAAEA; --c-growth: #B79BE6; --c-survey: #5CC3D0; --c-fedetc: #9BABA5;
+  --warn: #E9C375; --warn-bg: #3A3018; --up: #FF8078; --down: #7FAEFF; color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.5;
+  padding-block: 20px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+h2 { font-size: 16px; font-weight: 700; margin: 0; }
+.sub { color: var(--muted); font-size: 13px; margin: 2px 0 0; }
+section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.num { font-variant-numeric: tabular-nums; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* 다음 일정 */
+.next-hero { background: var(--accent); color: var(--accent-ink); border-radius: 14px; padding: 16px; display: flex; gap: 16px; align-items: center; }
+.next-hero .d { font-size: 40px; font-weight: 700; line-height: 1; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.next-hero .t { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.next-hero .t b { font-size: 17px; font-weight: 600; }
+.next-hero .t span { font-size: 13px; opacity: .9; }
+.next-list { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.next-list > div { display: flex; gap: 12px; padding: 10px 14px; align-items: baseline; border-top: 1px solid var(--line); }
+.next-list > div:first-child { border-top: 0; }
+.next-list .dd { font-weight: 700; color: var(--accent); width: 46px; flex: none; font-variant-numeric: tabular-nums; }
+.next-list .nm { flex: 1; min-width: 0; font-weight: 500; }
+.next-list .wh { color: var(--muted); font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* 현재 지표 */
+.rate { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.rate .lab { font-size: 13px; color: var(--muted); width: 100%; }
+.rate .val { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.rate .act { font-size: 13px; font-weight: 600; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 2px 10px; }
+.rate .det { width: 100%; font-size: 13px; color: var(--muted); }
+.inds { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+.ind { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.ind-h { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.ind-h b { font-weight: 600; }
+.ind-h span { font-size: 12px; color: var(--muted); text-align: right; }
+.ind table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ind th { font-weight: 400; font-size: 12px; color: var(--muted); text-align: right; padding: 0 0 2px; }
+.ind th:first-child, .ind td:first-child { text-align: left; }
+.ind td { padding: 3px 0; text-align: right; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.ind td:first-child { color: var(--muted); font-size: 13px; }
+.ind td.cur { font-weight: 600; }
+.ind td.prev { color: var(--muted); width: 26%; }
+.ind .foot { font-size: 12px; color: var(--muted); }
+.ind .foot b { color: var(--ink); font-weight: 500; }
+.sq { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; background: var(--c-fedetc); vertical-align: 1px; }
+.c-fomc { background: var(--c-fomc); } .c-price { background: var(--c-price); } .c-jobs { background: var(--c-jobs); }
+.c-growth { background: var(--c-growth); } .c-survey { background: var(--c-survey); } .c-fedetc { background: var(--c-fedetc); }
+
+/* 필터 */
+.filters { display: flex; flex-direction: column; gap: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; align-self: flex-start; background: var(--surface); }
+.seg button { font: inherit; font-size: 13px; padding: 6px 12px; border: 0; background: transparent; color: var(--muted); cursor: pointer; border-left: 1px solid var(--line); }
+.seg button:first-child { border-left: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+/* 달력 */
+.cal-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cal-nav b { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cal-nav button, .cal-all { font: inherit; font-size: 14px; min-width: 44px; height: 36px; padding: 0 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; cursor: pointer; }
+.cal-nav button:disabled { opacity: .35; cursor: default; }
+.cal-all { align-self: flex-start; }
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.cal .dow { font-size: 12px; color: var(--muted); text-align: center; padding: 6px 0; }
+.cell { font: inherit; border: 0; border-top: 1px solid var(--line); border-left: 1px solid var(--line); border-radius: 0; background: transparent; color: var(--ink); min-height: 72px; padding: 4px 2px; display: flex; flex-direction: column; gap: 2px; align-items: stretch; text-align: left; min-width: 0; cursor: pointer; }
+.cell:nth-child(7n+1) { border-left: 0; }
+.cell.blank { cursor: default; }
+.cell .n { font-size: 12px; font-weight: 600; padding: 0 4px; align-self: flex-start; font-variant-numeric: tabular-nums; }
+.cell.past .n { color: var(--muted); opacity: .55; }
+.cell.today .n { background: var(--ink); color: var(--bg); border-radius: 999px; padding: 0 6px; }
+.cell.sel { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
+.ch { display: block; font-size: 10px; line-height: 1.4; font-weight: 700; border-radius: 3px; padding: 0 3px; white-space: nowrap; overflow: hidden; color: var(--bg); }
+.ch.soft { background: transparent; box-shadow: inset 0 0 0 1px currentColor; font-weight: 600; }
+.ch.more { background: transparent; color: var(--muted); font-weight: 500; }
+.t-fomc { color: var(--c-fomc); } .t-price { color: var(--c-price); } .t-jobs { color: var(--c-jobs); }
+.t-growth { color: var(--c-growth); } .t-survey { color: var(--c-survey); } .t-fedetc { color: var(--c-fedetc); }
+
+/* 일정 목록 */
+.month { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .04em; margin: 8px 0 0; }
+.evs { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.ev { border-top: 1px solid var(--line); }
+.ev:first-child { border-top: 0; }
+.ev summary { list-style: none; display: flex; gap: 12px; padding: 10px 14px; cursor: pointer; align-items: flex-start; }
+.ev summary::-webkit-details-marker { display: none; }
+.ev-date { width: 34px; flex: none; text-align: center; line-height: 1.15; }
+.ev-date b { display: block; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ev-date i { font-style: normal; font-size: 12px; color: var(--muted); }
+.ev-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ev-title { font-weight: 500; overflow-wrap: anywhere; }
+.ev-title .ref { color: var(--muted); font-weight: 400; font-size: 13px; }
+.ev-time { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ev-time b { color: var(--ink); font-weight: 600; }
+.ev-side { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.dday { font-size: 12px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.dday.soon { color: var(--accent); }
+.pips { display: inline-flex; gap: 2px; }
+.pips i { width: 5px; height: 12px; border-radius: 1.5px; background: var(--line); }
+.pips i.on { background: var(--ink); }
+.tag { font-size: 11px; font-weight: 600; color: var(--warn); background: var(--warn-bg); border-radius: 4px; padding: 0 5px; margin-left: 6px; white-space: nowrap; }
+.ev-more { padding: 0 14px 12px 60px; font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+.imp3 .ev-title { font-weight: 700; }
+.empty { padding: 20px 14px; color: var(--muted); text-align: center; }
+
+.note { background: var(--sunken); border-radius: 12px; padding: 12px 14px; font-size: 13px; color: var(--muted); }
+.note b { color: var(--ink); }
+ul.plain { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+ul.plain b { color: var(--ink); font-weight: 500; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); align-items: center; }
+
+/* 시세 */
+.up { color: var(--up); } .down { color: var(--down); } .flat { color: var(--muted); }
+.mk { display: flex; justify-content: space-between; gap: 1px; font-size: 11.5px; line-height: 1.35; letter-spacing: -0.03em; padding: 0 1px; white-space: nowrap; }
+.mk i { font-style: normal; color: var(--muted); }
+.mk b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.mkts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.mkt { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; min-width: 0; }
+.mkt .mn { font-size: 15px; font-weight: 600; }
+.mkt b { font-size: 27px; font-weight: 700; line-height: 1.25; font-variant-numeric: tabular-nums; }
+.mkt .mc { font-size: 13.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.dayq { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-top: 8px; }
+.dayq > div { display: flex; gap: 10px; padding: 10px 14px; align-items: baseline; border-top: 1px solid var(--line); }
+.dayq > div:first-child { border-top: 0; }
+.dayq .qn { flex: 1; min-width: 0; font-weight: 500; }
+.dayq .qc { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.dayq b { font-weight: 700; min-width: 68px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* 한국 만기 색, 업데이트 버튼 */
+:root { --c-kr: #A62F6B; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-kr: #EE8DBC; } }
+:root[data-theme="dark"] { --c-kr: #EE8DBC; }
+.c-kr { background: var(--c-kr); } .t-kr { color: var(--c-kr); }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.upd { font: inherit; font-size: 16px; font-weight: 600; height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: var(--accent); color: var(--accent-ink); cursor: pointer; white-space: nowrap; flex: none; }
+.upd:disabled { opacity: .5; cursor: default; }
+.upd-msg { margin: 8px 0 0; font-size: 14.5px; background: var(--sunken); border-radius: 10px; padding: 8px 12px; }
+
+/* 글자·달력 크기 확대 */
+body { font-size: 17px; }
+h1 { font-size: 26px; } h2 { font-size: 20px; }
+.sub { font-size: 14.5px; }
+.chip { font-size: 15px; padding: 8px 14px; }
+.seg button { font-size: 15px; padding: 8px 14px; }
+.legend { font-size: 13.5px; }
+.cal-nav b { font-size: 22px; }
+.cal-nav button, .cal-all { font-size: 17px; height: 42px; min-width: 50px; }
+.cal .dow { font-size: 14px; font-weight: 600; padding: 8px 0; }
+.cell { min-height: 108px; padding: 5px 2px; gap: 3px; }
+.cell .n { font-size: 16px; font-weight: 700; }
+.ch { font-size: 12.5px; line-height: 1.5; }
+.month { font-size: 15px; }
+.ev-date { width: 38px; } .ev-date b { font-size: 22px; } .ev-date i { font-size: 13.5px; }
+.ev-title { font-size: 17px; } .ev-title .ref { font-size: 14.5px; }
+.ev-time { font-size: 14px; } .dday { font-size: 14px; } .tag { font-size: 12.5px; }
+.pips i { width: 6px; height: 14px; }
+.ev-more { font-size: 14.5px; padding-left: 64px; }
+.next-hero .d { font-size: 44px; } .next-hero .t b { font-size: 19px; } .next-hero .t span { font-size: 14.5px; }
+.next-list .dd { width: 54px; } .next-list .wh { font-size: 14.5px; }
+.rate .lab, .rate .det, .rate .act { font-size: 14.5px; } .rate .val { font-size: 31px; }
+.ind-h span, .ind th { font-size: 13.5px; } .ind table { font-size: 16px; } .ind td:first-child { font-size: 14.5px; } .ind .foot { font-size: 13.5px; }
+.note, ul.plain { font-size: 14.5px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="top"><h1>미국 시장 캘린더</h1><button class="upd" id="upd-btn" hidden>업데이트</button></div>
+    <p class="sub" id="asof"></p>
+    <p class="upd-msg" id="upd-msg" role="status" hidden></p>
+  </header>
+
+  <section aria-labelledby="h-cal">
+    <h2 id="h-cal">일정</h2>
+    <div class="filters">
+      <div class="chips" id="chips" role="group" aria-label="지표 종류"></div>
+      <div class="seg" id="seg" role="group" aria-label="중요도"></div>
+      <div class="legend"><span><span class="pips"><i class="on"></i><i class="on"></i><i class="on"></i></span> 중요도</span><span><span class="tag" style="margin-left:0">잠정</span> 바뀔 수 있는 날짜</span><span><span class="ch c-price" style="display:inline-block">CPI</span> 핵심 지표</span><span>날짜를 누르면 그날 일정과 시세가 보입니다</span></div>
+      <div class="legend"><span>지난 날짜의 숫자는 전일 대비 등락률(%)</span><span>코 코스피</span><span>나 나스닥</span><span>S S&amp;P 500</span><span>채 미국채 10년 금리</span><span>계 나스닥 계단식 단계(▲상승 ▼하락)</span><span><b class="up">빨강 상승</b> · <b class="down">파랑 하락</b></span></div>
+    </div>
+    <div class="cal-nav"><button id="cal-prev" aria-label="이전 달">‹</button><b id="cal-title"></b><button id="cal-next" aria-label="다음 달">›</button></div>
+    <div class="cal" id="cal"></div>
+    <button class="cal-all" id="cal-all" hidden>이 달 전체 보기</button>
+    <div id="list"></div>
+  </section>
+
+  <section aria-labelledby="h-mkt">
+    <h2 id="h-mkt">최근 종가 등락률</h2>
+    <div class="mkts" id="mkts"></div>
+    <p class="sub" id="mkt-note"></p>
+  </section>
+
+  <section aria-labelledby="h-next">
+    <h2 id="h-next">다음 주요 일정</h2>
+    <div id="next"></div>
+  </section>
+
+  <section aria-labelledby="h-now">
+    <h2 id="h-now">현재 지표</h2>
+    <div class="rate" id="rate"></div>
+    <div class="inds" id="inds"></div>
+    <p class="sub">시장 예상치는 1차 출처에 없어 표시하지 않았습니다.</p>
+  </section>
+
+  <section aria-labelledby="h-und">
+    <h2 id="h-und">날짜가 아직 없는 일정</h2>
+    <ul class="plain" id="undated"></ul>
+  </section>
+
+  <section aria-labelledby="h-unc">
+    <h2 id="h-unc">확인하지 못했거나 잠정인 항목</h2>
+    <ul class="plain" id="unconf"></ul>
+  </section>
+
+  <section aria-labelledby="h-src">
+    <h2 id="h-src">출처</h2>
+    <ul class="plain" id="srcs"></ul>
+    <div class="note"><b>알아 두기.</b> 발표 일정은 기관 사정(예산 공백, 공휴일 등)으로 바뀔 수 있습니다. 한국 시간은 미국 서머타임(3월 둘째 일요일 ~ 11월 첫째 일요일)을 반영해 계산했습니다. 이 페이지는 일정과 수치 정보만 제공하며 투자 권유나 매매 판단을 담지 않습니다.</div>
+  </section>
+</div>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  var D = window.MARKET_DATA;
+  var $ = function (id) { return document.getElementById(id); };
+  if (!D) { $('next').innerHTML = '<div class="note">데이터 파일(data.js)을 불러오지 못했습니다.</div>'; return; }
+  var DOW = ['일', '월', '화', '수', '목', '금', '토'];
+  var CATS = [['all', '전체'], ['fomc', 'FOMC'], ['price', '물가'], ['jobs', '고용'], ['growth', '성장·소비'], ['survey', 'ISM'], ['fedetc', '의사록'], ['kr', '한국 만기']];
+  var IMPS = [[1, '전체'], [2, '중요 이상'], [3, '핵심만']];
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function p2(n) { return (n < 10 ? '0' : '') + n; }
+
+  // 미국 동부 서머타임 여부 (3월 둘째 일요일 ~ 11월 첫째 일요일 전)
+  function isEDT(y, m, d) {
+    var t = Date.UTC(y, m - 1, d);
+    var mar1 = new Date(Date.UTC(y, 2, 1)).getUTCDay();
+    var start = Date.UTC(y, 2, 1 + ((7 - mar1) % 7) + 7);
+    var nov1 = new Date(Date.UTC(y, 10, 1)).getUTCDay();
+    var end = Date.UTC(y, 10, 1 + ((7 - nov1) % 7));
+    return t >= start && t < end;
+  }
+  function dayNum(y, m, d) { return Math.round(Date.UTC(y, m - 1, d) / 864e5); }
+  var now = new Date(Date.now() + 9 * 36e5);
+  var todayNum = dayNum(now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate());
+
+  var events = [];
+  D.series.forEach(function (s) {
+    s.items.forEach(function (it) {
+      var o = typeof it === 'string' ? { d: it } : Array.isArray(it) ? { d: it[0], ref: it[1] } : it;
+      var e = { type: s.type, cat: s.cat, name: s.name, imp: s.imp, time: s.time, src: s.src, status: s.status, note: s.note };
+      for (var k in o) e[k] = o[k];
+      var a = e.d.split('-').map(Number), h = e.time.split(':').map(Number);
+      var edt = isEDT(a[0], a[1], a[2]);
+      var kst = s.tz === 'KST';
+      var k9 = new Date(Date.UTC(a[0], a[1] - 1, a[2], h[0] + (kst ? 0 : (edt ? 4 : 5) + 9), h[1]));
+      e.ky = k9.getUTCFullYear(); e.km = k9.getUTCMonth() + 1; e.kd = k9.getUTCDate(); e.kw = k9.getUTCDay();
+      e.kt = p2(k9.getUTCHours()) + ':' + p2(k9.getUTCMinutes());
+      e.sort = k9.getTime();
+      e.dn = dayNum(e.ky, e.km, e.kd) - todayNum;
+      e.et = kst ? null : a[1] + '/' + a[2] + '(' + DOW[new Date(Date.UTC(a[0], a[1] - 1, a[2])).getUTCDay()] + ') ' + e.time + ' ' + (edt ? 'EDT' : 'EST');
+      if (e.dn >= 0) events.push(e);
+    });
+  });
+  events.sort(function (x, y) { return x.sort - y.sort || y.imp - x.imp; });
+
+  function dlabel(n) { return n === 0 ? '오늘' : n === 1 ? '내일' : 'D-' + n; }
+  function kdate(e) { return e.km + '/' + e.kd + '(' + DOW[e.kw] + ') ' + e.kt; }
+  function sq(cat) { return '<span class="sq c-' + cat + '"></span>'; }
+
+  $('asof').textContent = '오늘 ' + now.getUTCFullYear() + '.' + p2(now.getUTCMonth() + 1) + '.' + p2(now.getUTCDate()) + ' (' + DOW[now.getUTCDay()] + ') 한국 시간 기준 · 자료 확인일 ' + D.checked;
+
+  // 다음 주요 일정
+  var top = events.filter(function (e) { return e.imp === 3; }).slice(0, 5);
+  if (top.length) {
+    var f = top[0];
+    var h = '<div class="next-hero"><div class="d">' + dlabel(f.dn) + '</div><div class="t"><b>' + esc(f.name) + (f.ref ? ' · ' + esc(f.ref) : '') + '</b><span>한국 ' + kdate(f) + (f.et ? ' · 미 동부 ' + esc(f.et) : '') + '</span></div></div>';
+    h += '<div class="next-list" style="margin-top:10px">' + top.slice(1).map(function (e) {
+      return '<div><span class="dd">' + dlabel(e.dn) + '</span><span class="nm">' + sq(e.cat) + esc(e.name) + '</span><span class="wh">' + kdate(e) + '</span></div>';
+    }).join('') + '</div>';
+    $('next').innerHTML = h;
+  } else { $('next').innerHTML = '<div class="note">예정된 주요 일정이 데이터에 없습니다. data.js를 갱신해 주세요.</div>'; }
+
+  // 현재 지표
+  var r = D.policyRate, rs = D.sources[r.src];
+  $('rate').innerHTML = '<span class="lab">연방기금금리 목표 범위</span><span class="val">' + esc(r.range) + '</span><span class="act">' + esc(r.decided.slice(5).replace('-', '/')) + ' ' + esc(r.action) + '</span><span class="det">' + esc(r.detail) + ' <a href="' + esc(rs.url) + '" target="_blank" rel="noopener">출처</a></span>';
+  $('inds').innerHTML = D.indicators.map(function (i) {
+    var nx = events.filter(function (e) { return e.type === i.key; })[0];
+    var s = D.sources[i.src];
+    return '<div class="ind"><div class="ind-h"><b>' + sq(i.cat) + esc(i.name) + '</b><span>' + esc(i.period) + '</span></div>' +
+      '<table><thead><tr><th></th><th>최근</th><th>직전</th></tr></thead><tbody>' +
+      i.rows.map(function (w) { return '<tr><td>' + esc(w[0]) + '</td><td class="cur">' + esc(w[1]) + '</td><td class="prev">' + esc(w[2]) + '</td></tr>'; }).join('') +
+      '</tbody></table>' +
+      (i.forecast ? '<div class="foot">시장 예상 <b>' + esc(i.forecast) + '</b></div>' : '') +
+      '<div class="foot">다음 발표 <b>' + (nx ? kdate(nx) + ' · ' + dlabel(nx.dn) : '미확인') + '</b> · 발표 ' + esc(i.released.slice(5).replace('-', '/')) + ' · <a href="' + esc(s.url) + '" target="_blank" rel="noopener">출처</a></div>' +
+      (i.note ? '<div class="foot">' + esc(i.note) + '</div>' : '') + '</div>';
+  }).join('');
+
+  // 필터
+  var st = { cat: 'all', imp: 2 };
+  try { var sv = JSON.parse(localStorage.getItem('mc-filter') || 'null'); if (sv && sv.cat && sv.imp) st = sv; } catch (e) {}
+  function drawFilters() {
+    $('chips').innerHTML = CATS.map(function (c) { return '<button class="chip" id="chip-' + c[0] + '" data-cat="' + c[0] + '" aria-pressed="' + (st.cat === c[0]) + '">' + (c[0] === 'all' ? '' : sq(c[0])) + c[1] + '</button>'; }).join('');
+    $('seg').innerHTML = IMPS.map(function (c) { return '<button id="imp-' + c[0] + '" data-imp="' + c[0] + '" aria-pressed="' + (st.imp === c[0]) + '">' + c[1] + '</button>'; }).join('');
+  }
+  var SHORT = { fomc: 'FOMC', minutes: '의사록', cpi: 'CPI', ppi: 'PPI', pce: 'PCE', jobs: '고용', gdp: 'GDP', retail: '소매', ism_m: 'ISM제', ism_s: 'ISM서', claims: '실업', opex: '만기' };
+  var vm = { y: now.getUTCFullYear(), m: now.getUTCMonth() + 1 }, sel = null;
+  var minYM = vm.y * 12 + vm.m, lastEv = events[events.length - 1], maxYM = lastEv ? lastEv.ky * 12 + lastEv.km : minYM;
+  // 시세: 거래일별 등락 계산
+  var MK = {}, M = D.markets;
+  function sgn(v, dg) { var s = v.toFixed(dg); if (Number(s) === 0) return (0).toFixed(dg); return (v > 0 ? '+' : '') + s; }
+  function cls(v) { return Math.abs(v) < 0.005 ? 'flat' : v > 0 ? 'up' : 'down'; }
+  function stairTxt(x) { return (x.stair.up ? '상승 ' : '하락 ') + x.stair.n + '단계' + (x.stair.nw ? ' (새 파도)' : ''); }
+  function dkey(y, m, d) { return y + '-' + p2(m) + '-' + p2(d); }
+  function fclose(x) { return x.it.kind === 'yield' ? x.close.toFixed(2) + '%' : x.close.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  if (M) {
+    M.items.forEach(function (it) {
+      for (var i = 1; i < it.days.length; i++) {
+        var c = it.days[i][1], p = it.days[i - 1][1], k = it.days[i][0];
+        (MK[k] = MK[k] || []).push({ it: it, date: k, close: c, pct: (c / p - 1) * 100, diff: c - p });
+      }
+    });
+    // 계단식 카운트: 같은 방향의 바로 앞 날보다 등락폭이 작거나 같으면 +1, 더 크면 1단계(새 파도)
+    var sIt = M.items.filter(function (i) { return i.key === M.stairKey; })[0];
+    if (sIt) {
+      var un = 0, dn = 0, pu = null, pd = null;
+      for (var si = 1; si < sIt.days.length; si++) {
+        var sx = MK[sIt.days[si][0]].filter(function (q) { return q.it === sIt; })[0];
+        var sr = Math.round(sx.pct * 100) / 100, nw;
+        if (sr > 0) { nw = !(pu !== null && sr <= pu); un = nw ? 1 : un + 1; pu = sr; sx.stair = { up: true, n: un, nw: nw }; }
+        else if (sr < 0) { nw = !(pd !== null && -sr <= pd); dn = nw ? 1 : dn + 1; pd = -sr; sx.stair = { up: false, n: dn, nw: nw }; }
+      }
+    }
+    $('mkts').innerHTML = M.items.map(function (it) {
+      var k = it.days[it.days.length - 1][0], x = MK[k].filter(function (q) { return q.it === it; })[0];
+      var md = Number(k.slice(5, 7)) + '/' + Number(k.slice(8));
+      return '<div class="mkt"><span class="mn">' + esc(it.name) + '</span><b class="' + cls(x.pct) + '">' + sgn(x.pct, 2) + '%</b><span class="mc">' + fclose(x) + (it.kind === 'yield' ? ' · ' + sgn(x.diff, 2) + '%p' : '') + ' · ' + md + ' 종가</span>' + (x.stair ? '<span class="mc">계단식 ' + stairTxt(x) + '</span>' : '') + '</div>';
+    }).join('');
+    $('mkt-note').textContent = '전 거래일 종가 대비. 날짜는 각 시장의 현지 거래일입니다. 미국채는 가격이 아니라 금리의 변동이며, 금리가 오르면 채권 가격은 내립니다. 자동으로 갱신되지 않습니다 · 자료 확인 ' + M.checked + ' (한국 시간)';
+  } else { $('h-mkt').parentNode.hidden = true; }
+  function dayQuotes(y, m, d) {
+    var q = MK[dkey(y, m, d)]; if (!q) return '';
+    return '<p class="month">' + y + '년 ' + m + '월 ' + d + '일 시세 (전일 대비)</p><div class="dayq">' + q.map(function (x) {
+      return '<div><span class="qn">' + esc(x.it.name) + (x.stair ? '<br><span class="qc">계단식 ' + stairTxt(x) + '</span>' : '') + '</span><span class="qc">' + fclose(x) + (x.it.kind === 'yield' ? ' (' + sgn(x.diff, 2) + '%p)' : '') + '</span><b class="' + cls(x.pct) + '">' + sgn(x.pct, 2) + '%</b></div>';
+    }).join('') + '</div>';
+  }
+  function visible() { return events.filter(function (e) { return (st.cat === 'all' || e.cat === st.cat) && e.imp >= st.imp; }); }
+  function drawCal() {
+    var y = vm.y, m = vm.m, by = {};
+    visible().forEach(function (e) { if (e.ky === y && e.km === m) (by[e.kd] = by[e.kd] || []).push(e); });
+    var first = new Date(Date.UTC(y, m - 1, 1)).getUTCDay(), days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    var h = DOW.map(function (d) { return '<div class="dow">' + d + '</div>'; }).join('');
+    for (var i = 0; i < first; i++) h += '<div class="cell blank"></div>';
+    for (var d = 1; d <= days; d++) {
+      var dn = dayNum(y, m, d) - todayNum;
+      var L = (by[d] || []).slice().sort(function (a, b) { return b.imp - a.imp || a.sort - b.sort; });
+      var chips = L.slice(0, 3).map(function (e) { return '<span class="ch ' + (e.imp === 3 ? 'c-' + e.cat : 'soft t-' + e.cat) + '">' + esc(SHORT[e.type] || e.name) + '</span>'; }).join('');
+      if (L.length > 3) chips += '<span class="ch more">+' + (L.length - 3) + '</span>';
+      chips += (MK[dkey(y, m, d)] || []).map(function (x) { return '<span class="mk"><i>' + esc(x.it.short) + '</i><b class="' + cls(x.pct) + '">' + sgn(x.pct, 2) + '</b></span>' + (x.stair ? '<span class="mk"><i>계</i><b class="' + (x.stair.up ? 'up' : 'down') + '">' + (x.stair.up ? '▲' : '▼') + x.stair.n + '</b></span>' : ''); }).join('');
+      h += '<button class="cell' + (dn < 0 ? ' past' : '') + (dn === 0 ? ' today' : '') + (sel === d ? ' sel' : '') + '" data-d="' + d + '" aria-label="' + m + '월 ' + d + '일, 일정 ' + L.length + '건"><span class="n">' + d + '</span>' + chips + '</button>';
+    }
+    for (var j = (first + days) % 7; j > 0 && j < 7; j++) h += '<div class="cell blank"></div>';
+    $('cal').innerHTML = h;
+    $('cal-title').textContent = y + '년 ' + m + '월';
+    $('cal-prev').disabled = y * 12 + m <= minYM;
+    $('cal-next').disabled = y * 12 + m >= maxYM;
+    $('cal-all').hidden = sel == null;
+  }
+  function move(k) { var t = vm.y * 12 + (vm.m - 1) + k; vm.y = Math.floor(t / 12); vm.m = t % 12 + 1; sel = null; drawList(); }
+  $('cal-prev').addEventListener('click', function () { move(-1); });
+  $('cal-next').addEventListener('click', function () { move(1); });
+  $('cal-all').addEventListener('click', function () { sel = null; drawList(); });
+  $('cal').addEventListener('click', function (ev) { var b = ev.target.closest('button'); if (!b) return; var d = Number(b.dataset.d); sel = sel === d ? null : d; drawList(); });
+  function drawList() {
+    drawCal();
+    var list = visible().filter(function (e) { return e.ky === vm.y && e.km === vm.m && (sel == null || e.kd === sel); });
+    var dq = sel ? dayQuotes(vm.y, vm.m, sel) : '';
+    if (!list.length && dq) { $('list').innerHTML = dq; return; }
+    if (!list.length) { $('list').innerHTML = '<div class="evs"><div class="empty">' + (sel ? vm.m + '월 ' + sel + '일에는' : '이 달에는') + ' 표시할 일정이 없습니다. 다른 날짜나 달을 고르거나 중요도를 "전체"로 바꿔 보세요.</div></div>'; return; }
+    var out = dq, cur = '';
+    list.forEach(function (e) {
+      var mk = e.ky + '년 ' + e.km + '월' + (sel ? ' ' + sel + '일' : '') + ' 일정';
+      if (mk !== cur) { out += (cur ? '</div>' : '') + '<p class="month">' + mk + '</p><div class="evs">'; cur = mk; }
+      var s = D.sources[e.src];
+      var pips = '<span class="pips" role="img" aria-label="중요도 ' + e.imp + '/3">' + [1, 2, 3].map(function (n) { return '<i' + (n <= e.imp ? ' class="on"' : '') + '></i>'; }).join('') + '</span>';
+      out += '<details class="ev imp' + e.imp + '"><summary>' +
+        '<span class="ev-date"><b>' + e.kd + '</b><i>' + DOW[e.kw] + '</i></span>' +
+        '<span class="ev-body"><span class="ev-title">' + sq(e.cat) + esc(e.name) + (e.ref ? ' <span class="ref">' + esc(e.ref) + '</span>' : '') + (e.status !== '확정' ? '<span class="tag">잠정</span>' : '') + '</span>' +
+        '<span class="ev-time"><b>' + e.kt + '</b> 한국' + (e.et ? ' · 미 동부 ' + esc(e.et) : ' 시간') + '</span></span>' +
+        '<span class="ev-side">' + pips + '<span class="dday' + (e.dn <= 7 ? ' soon' : '') + '">' + dlabel(e.dn) + '</span></span>' +
+        '</summary><div class="ev-more"><span>상태: ' + esc(e.status) + (e.status === '확정' ? ' (기관 공식 일정에 게재)' : '') + '</span>' +
+        (e.note ? '<span>' + esc(e.note) + '</span>' : '') +
+        '<span>출처: <a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.name) + '</a> · 확인 ' + esc(D.checked) + '</span></div></details>';
+    });
+    $('list').innerHTML = out + '</div>';
+  }
+  function save() { try { localStorage.setItem('mc-filter', JSON.stringify(st)); } catch (e) {} }
+  $('chips').addEventListener('click', function (ev) { var b = ev.target.closest('button'); if (!b) return; st.cat = b.dataset.cat; save(); drawFilters(); drawList(); });
+  $('seg').addEventListener('click', function (ev) { var b = ev.target.closest('button'); if (!b) return; st.imp = Number(b.dataset.imp); save(); drawFilters(); drawList(); });
+  drawFilters(); drawList();
+
+  // 업데이트 요청: 페이지는 외부 시세를 직접 받을 수 없어, 버튼을 누르면 Claude에게 요청이 가고 Claude가 자료를 받아 다시 게시한다.
+  (async function () {
+    var cm = null;
+    try { cm = window.claude && window.claude.use ? await window.claude.use('comments') : null; } catch (e) { cm = null; }
+    if (!cm || typeof cm.sendToClaude !== 'function') return;
+    var btn = $('upd-btn'), msg = $('upd-msg'), TK = 'mc-upd-thread', busy = false;
+    var OFF = 'PC의 Claude가 꺼져 있어 지금은 요청을 받을 수 없습니다. PC에서 Claude를 켠 뒤 다시 눌러 주세요.';
+    function say(t) { msg.textContent = t || ''; msg.hidden = !t; }
+    btn.hidden = false;
+    btn.addEventListener('click', async function () {
+      if (busy) return;
+      busy = true; btn.disabled = true; say('업데이트를 요청하는 중입니다.');
+      var ok = false, tid = null;
+      try {
+        var can = 'off';
+        try { can = await cm.canSendToClaude(); } catch (e) {}
+        if (can !== 'available') say(can === 'writers_only' ? '이 계정은 업데이트를 요청할 수 없습니다.' : OFF);
+        else {
+          var text = '시장 캘린더 업데이트 요청 (' + new Date().toLocaleString('ko-KR') + ')';
+          try { tid = localStorage.getItem(TK); } catch (e) {}
+          var r = null;
+          if (tid) {
+            try { r = await cm.sendToClaude({ threadId: tid, text: text }); }
+            catch (e) { if (e && e.code === 'not_found') tid = null; else throw e; }
+          }
+          if (!r) { var anchor = await cm.anchorFor(btn); r = await cm.sendToClaude({ anchor: anchor, text: text }); }
+          try { localStorage.setItem(TK, r.threadId); } catch (e) {}
+          ok = true;
+          say('업데이트를 요청했습니다. 몇 분 뒤 새 자료가 이 화면에 자동으로 표시됩니다.');
+        }
+      } catch (e) {
+        var c = e && e.code;
+        if (tid) { try { localStorage.removeItem(TK); } catch (_) {} }
+        say(c === 'consent_required' ? '요청을 보내려면 댓글 작성 허용이 필요합니다. 다시 눌러 허용해 주세요.'
+          : c === 'forbidden' || c === 'not_granted' ? '이 화면에서는 업데이트 요청 기능이 꺼져 있습니다.'
+          : c === 'claude_unavailable' ? OFF
+          : c === 'rate_limited' ? '요청이 너무 잦습니다. 잠시 뒤 다시 눌러 주세요.'
+          : '요청을 보내지 못했습니다. 잠시 뒤 다시 눌러 주세요.');
+      }
+      busy = false;
+      if (ok) setTimeout(function () { btn.disabled = false; }, 180000); else btn.disabled = false;
+    });
+  })();
+
+  $('undated').innerHTML = D.undated.map(function (u) { var s = D.sources[u.src]; return '<li><b>' + esc(u.name) + '</b> — ' + esc(u.when) + '. ' + esc(u.note) + ' <a href="' + esc(s.url) + '" target="_blank" rel="noopener">출처</a></li>'; }).join('');
+  $('unconf').innerHTML = D.unconfirmed.map(function (u) { return '<li>' + esc(u) + '</li>'; }).join('');
+  $('srcs').innerHTML = Object.keys(D.sources).map(function (k) { var s = D.sources[k]; return '<li><a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.name) + '</a> — ' + esc(s.what) + ' · 확인 ' + esc(D.checked) + '</li>'; }).join('');
+})();
+</script>
+
+<script>
+// 설치형 웹앱 전용: 오프라인 저장과 새로고침 버튼. Claude 화면의 업데이트 요청 버튼을 대신한다.
+(function () {
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+  var btn = document.getElementById('upd-btn'), msg = document.getElementById('upd-msg'), D = window.MARKET_DATA;
+  if (!btn || !msg || !D) return;
+  function say(t) { msg.textContent = t || ''; msg.hidden = !t; }
+  var mine = D.checked + '|' + (D.markets ? D.markets.checked : '');
+  btn.textContent = '새로고침';
+  btn.hidden = false;
+  btn.addEventListener('click', async function () {
+    btn.disabled = true;
+    say('새 자료가 올라왔는지 확인하는 중입니다.');
+    try {
+      var r = await fetch('data.js', { cache: 'no-store' });
+      if (!r.ok) throw new Error('http');
+      var t = await r.text(), a = /\n  checked: '([^']*)'/.exec(t), b = /\n    checked: '([^']*)'/.exec(t);
+      var theirs = (a ? a[1] : '') + '|' + (b ? b[1] : '');
+      if (theirs !== mine) { location.reload(); return; }
+      say('이미 가장 최근에 올라온 자료입니다 (시세 확인 ' + (D.markets ? D.markets.checked : D.checked) + '). 새 수치는 Claude에게 업데이트를 요청하면 올라옵니다.');
+    } catch (e) {
+      say('연결이 되지 않아 저장된 자료를 보여 주고 있습니다. 잠시 뒤 다시 눌러 주세요.');
+    }
+    btn.disabled = false;
+  });
+})();
+</script>
+</body>
+</html>
